@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>RVCN Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.min.js"></script>
+</head>
+<body>
+  <h2>📊 RVCN Wallet Dashboard</h2>
+  <button onclick="connect()">🔌 Connect Wallet</button><br><br>
+  <p>Your Wallet: <span id="wallet"></span></p>
+  <p>RVCN Balance: <span id="balance">0</span></p>
+
+  <script>
+    const tokenAddress = "0x72b5346e0738060F03289d5A04a67BEE82B955ec";
+    const tokenAbi = ["function balanceOf(address) view returns (uint)", "function decimals() view returns (uint8)"];
+
+    async function connect() {
+      await window.ethereum.request({ method: 'eth_requestAccounts' });
+      const provider = new ethers.providers.Web3Provider(window.ethereum);
+      const signer = provider.getSigner();
+      const address = await signer.getAddress();
+      document.getElementById("wallet").innerText = address;
+
+      const token = new ethers.Contract(tokenAddress, tokenAbi, signer);
+      const rawBalance = await token.balanceOf(address);
+      const decimals = await token.decimals();
+      const balance = ethers.utils.formatUnits(rawBalance, decimals);
+      document.getElementById("balance").innerText = balance;
+    }
+  </script>
+</body>
+</html>
