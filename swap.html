@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Swap RVCN</title>
+  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.min.js"></script>
+</head>
+<body>
+  <h2>Swap RVCN ↔ BNB</h2>
+  <button onclick="connect()">🔌 Connect Wallet</button><br><br>
+  <input type="text" id="amount" placeholder="Amount of RVCN" /><br><br>
+  <button onclick="swap()">🔥 Swap Now</button>
+  <p id="status"></p>
+
+  <script>
+    let provider, signer, router, token;
+
+    const routerAddress = "0x10ED43C718714eb63d5aA57B78B54704E256024E"; // PancakeSwap V2
+    const tokenAddress = "0x72b5346e0738060F03289d5A04a67BEE82B955ec"; // RVCN
+
+    async function connect() {
+      await window.ethereum.request({ method: 'eth_requestAccounts' });
+      provider = new ethers.providers.Web3Provider(window.ethereum);
+      signer = provider.getSigner();
+      document.getElementById("status").innerText = "Wallet Connected!";
+    }
+
+    async function swap() {
+      const amountIn = document.getElementById("amount").value;
+      if (!amountIn) return alert("Enter amount");
+
+      const deadline = Math.floor(Date.now() / 1000) + 60 * 20;
+      const tokenAbi = [
+        "function approve(address spender, uint amount) public returns (bool)",
+        "function decimals() view returns (uint8)"
+      ];
+      const routerAbi = [
+        "function swapExactTokensForETHSupportingFeeOnTransferTokens(uint amountIn,uint amountOutMin,address[] calldata path,address to,uint deadline) external"
+      ];
+
+      token = new ethers.Contract(tokenAddress, tokenAbi, signer);
+      const decimals = await token.decimals();
+      const parsedAmount = ethers.utils.parseUnits(amountIn, decimals);
+
+      await token.approve(routerAddress, parsedAmount);
+      router = new ethers.Contract(routerAddress, routerAbi, signer);
+      const path = [tokenAddress, "0xBB4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c"]; // RVCN -> WBNB
+
+      await router.swapExactTokensForETHSupportingFeeOnTransferTokens(
+        parsedAmount,
+        0,
+        path,
+        await signer.getAddress(),
+        deadline
+      );
+
+      document.getElementById("status").innerText = "Swap Successful ✅";
+    }
+  </script>
+</body>
+</html>
